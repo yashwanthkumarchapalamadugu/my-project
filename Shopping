@@ -1,0 +1,110 @@
+import java.util.*;
+
+interface Payment {
+    void pay(double amount);
+}
+
+class Product {
+    private String name;
+    private double price;
+    private int quantity;
+
+    public Product(String name, double price, int quantity) {
+        this.name = name;
+        this.price = price;
+        this.quantity = quantity;
+    }
+
+    public String getName() { return name; }
+    public double getPrice() { return price; }
+    public int getQuantity() { return quantity; }
+    public double getTotalPrice() { return price * quantity; }
+}
+
+abstract class Discount {
+    abstract double applyDiscount(List<Product> products);
+}
+
+class FestiveDiscount extends Discount {
+    public double applyDiscount(List<Product> products) {
+        double total = 0;
+        for (Product p : products) total += p.getTotalPrice();
+        return total * 0.9; // 10% off
+    }
+}
+
+class BulkDiscount extends Discount {
+    public double applyDiscount(List<Product> products) {
+        double total = 0;
+        for (Product p : products) {
+            if (p.getQuantity() > 5) {
+                total += p.getTotalPrice() * 0.8; // 20% off
+            } else {
+                total += p.getTotalPrice();
+            }
+        }
+        return total;
+    }
+}
+
+class ShoppingCart implements Payment {
+    private List<Product> products = new ArrayList<>();
+    private Discount discount;
+
+    public void addProduct(Product p) {
+        products.add(p);
+    }
+
+    public void setDiscount(Discount discount) {
+        this.discount = discount;
+    }
+
+    public void checkout() {
+        for (Product p : products) {
+            System.out.printf("Product: %s, Price: %.2f, Quantity: %d\n",
+                              p.getName(), p.getPrice(), p.getQuantity());
+        }
+        double amount = discount.applyDiscount(products);
+        System.out.printf("Total Amount Payable: %.2f\n", amount);
+        pay(amount);
+    }
+
+    public void pay(double amount) {
+        System.out.println("Payment done for amount: " + String.format("%.2f", amount));
+    }
+}
+
+public class MiniShoppingCart {
+    public static void main(String[] args) {
+        Scanner sc = new Scanner(System.in);
+        int n = sc.nextInt();
+        ShoppingCart cart = new ShoppingCart();
+
+        for (int i = 0; i < n; i++) {
+            String name = sc.next();
+            double price = sc.nextDouble();
+            int qty = sc.nextInt();
+            cart.addProduct(new Product(name, price, qty));
+        }
+
+        String discountType = sc.next();
+
+        if (discountType.equalsIgnoreCase("festive")) {
+            cart.setDiscount(new FestiveDiscount());
+        } else if (discountType.equalsIgnoreCase("bulk")) {
+            cart.setDiscount(new BulkDiscount());
+        } else {
+            System.out.println("Invalid discount type, no discount applied.");
+            cart.setDiscount(new Discount() {
+                public double applyDiscount(List<Product> products) {
+                    double total = 0;
+                    for (Product p : products) total += p.getTotalPrice();
+                    return total;
+                }
+            });
+        }
+
+        cart.checkout();
+        sc.close();
+    }
+}
